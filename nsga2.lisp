@@ -144,51 +144,6 @@
 
 (defun crossover (options parent1 parent2)
   (with-slots (pcross nvar minvar maxvar eta-c) options
-    (if (<= (random 1d0) pcross) ; do crossover?
-	(loop with child1 = (make-instance 'individual :xvar (make-list nvar :initial-element 0d0) :obj (make-list nvar :initial-element 0d0))
-	   with child2 = (make-instance 'individual :xvar (make-list nvar :initial-element 0d0) :obj (make-list nvar :initial-element 0d0))
-	   for x1 in (xvar parent1)
-	   for x2 in (xvar parent2)
-	   for yl in minvar
-	   for yu in maxvar
-	   for i below nvar
-	   do (if (<= (random 1d0) 0.5d0) ; Even chance of copying parent1/2 to child1/2
-		  (if (> (abs (- x1 x2)) *eps*) ; difference larger than *EPS*
-		      (destructuring-bind (y1 y2)
-			  (if (< x1 x2) ; smaller into y1, larger into y2
-			      (list x1 x2)
-			      (list x2 x1))
-			(let* ((rand (random 1d0)) ; uniform random # to SBX PDF
-			       (beta (1+ (/ (* 2d0 (- y1 yl)) (- y2 y1))))
-			       (alpha (- 2d0 (expt beta (- (1+ eta-c)))))
-			       (betaq (if (<= rand (/ alpha))
-					  (expt (* rand alpha) (/ (1+ eta-c)))
-					  (expt (/ (- 2d0 (* rand alpha))) (/ (1+ eta-c)))))
-			       (c1 (* 0.5d0 (+ y1 y2 (- (* betaq (- y2 y1)))))) ; child 1 (lower)
-			       (beta (1+ (* 2d0 (/ (- yu y2) (- y2 y1)))))
-			       (alpha (- 2d0 (expt beta (- (1+ eta-c)))))
-			       (betaq (if (<= rand (/ alpha))
-					  (expt (* rand alpha) (/ (1+ eta-c)))
-					  (expt (/ (- 2d0 (* rand alpha))) (/ (1+ eta-c)))))
-			       (c2 (* 0.5d0 (+ y1 y2 (* betaq (- y2 y1))))) ; child 2 (upper)
-			       (c1 (max (min c1 yu) yl)) ; apply limits
-			       (c2 (max (min c2 yu) yl))) ; apply limits
-			  (if (<= (random 1d0) 0.5d0) ; even chance of child 1 or 2 getting var
-			      (setf (elt (obj child1) i) c2
-				    (elt (obj child2) i) c1)
-			      (setf (elt (obj child1) i) c1
-				    (elt (obj child2) i) c2))))
-		      (setf (elt (obj child1) i) x1 ; if |x1-x2| < *EPS* just copy
-			    (elt (obj child2) i) x2))
-		  (setf (elt (obj child1) i) x1 ; even chance of just copying parent var
-			(elt (obj child2) i) x2))
-	   finally (return (list child1 child2)))
-	;; Else copy parents design variables into new children
-	(list (make-instance 'individual :xvar (copy-list (xvar parent1)))
-		(make-instance 'individual :xvar (copy-list (xvar parent2)))))))
-
-(defun crossover2 (options parent1 parent2)
-  (with-slots (pcross nvar minvar maxvar eta-c) options
     (let ((child1 (make-instance 'individual :xvar (make-list (length (xvar parent1)))))
 	  (child2 (make-instance 'individual :xvar (make-list (length (xvar parent2)))))
 	  i 
@@ -251,10 +206,10 @@
 	 while (< i popsize)
 	 for parent11 = (tournament (elt parents (elt a1 i)) (elt parents (elt a1 (+ i 1))))
 	 for parent21 = (tournament (elt parents (elt a1 (+ i 2))) (elt parents (elt a1 (+ i 3))))
-	 for (child11 child21) = (crossover2 options parent11 parent21)
+	 for (child11 child21) = (crossover options parent11 parent21)
 	 for parent12 = (tournament (elt parents (elt a2 i)) (elt parents (elt a2 (+ i 1))))
 	 for parent22 = (tournament (elt parents (elt a2 (+ i 2))) (elt parents (elt a2 (+ i 3))))
-	 for (child12 child22) = (crossover2 options parent12 parent22)
+	 for (child12 child22) = (crossover options parent12 parent22)
 	 collect child11
 	 collect child21
 	 collect child12
@@ -320,17 +275,16 @@
 	  (setf parents (subseq mixed 0 popsize))))
       (values parents))))
 
-(defun norme2obj (ind)
-  "Euclidean norm squared of objective function values"
-  (reduce #'+ (mapcar #'(lambda (obj) (expt obj 2)) (obj ind))))
+(defun norme2list (l)
+  (reduce #'+ (mapcar #'(lambda (li) (expt li 2)) l)))
 
-(defun normeobj (ind)
-  "Euclidean norm of objective function values"
-  (sqrt (norme2obj ind)))
+(defun normelist (l)
+  (sqrt (norme2list l)))
 
-(defun find-min-obj (pop)
+(defun find-min (pop &optional (key #'obj))
+  "Find individual with the minimum Euclidean norm of the objective functions"
   (loop for ind in pop
-     for objnorm = (normeobj ind)
-     for min = objnorm then (min objnorm min)
-     for minind = ind then (if (= objnorm min) ind minind)
+     for norm = (normelist (funcall key ind))
+     for min = norm then (min norm min)
+     for minind = ind then (if (= norm min) ind minind)
      finally (return minind)))
