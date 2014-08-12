@@ -14,7 +14,8 @@
    :x0 (list 1d0 0d0 0d0 1d0)
    :xf (list 1.5d0 0d0 0d0 (sqrt (/ mu 1.5d0)))
    :t0 0d0
-   :tf 10d0))
+   :tf 10d0
+   :tmax 20d0))
 
 (defun sail-circ-coplanar-eom (tm x u)
   (lethash (be mu) *sail-circ-coplanar-param*
@@ -65,15 +66,15 @@
    :eta-m 20d0
    :objfun #'sail-circ-coplanar-objfun))
 
-(defun sail-circ-coplanar-plot (ind &key filename title (stream t) (if-exists :supersede))
+(defun sail-circ-coplanar-plot (ind &key filename title (stream t) (if-exists :supersede) (utm-fun #'(lambda (ind) (cdr (xvar ind)))) (tf-fun #'(lambda (ind) (car (xvar ind)))))
   (flet ((sail-plot (s)
 	   (when title (format s "set title \"~a\"~%" title))
 	   (format s "set polar~%")
 	   (format s "set size ratio -1~%")
 	   (format s "set grid polar~%")
 	   (format s "plot '-' with lines title \"\"~%")
-	   (loop with tf = (car (xvar ind))
-	      with utm = (cdr (xvar ind))
+	   (loop with tf = (funcall tf-fun ind)
+	      with utm = (funcall utm-fun ind)
 	      for (tm x) in (sail-circ-coplanar-prop tf utm)
 	      for (r th vr vt) = x
 	      do (format s "~f ~f~%" th r))))
@@ -84,7 +85,7 @@
 
 ;;; Optimize for time of flight
 
-(lethash (xf) *sail-circ-coplanar-tf-param*
+(lethash (xf) *sail-circ-coplanar-param*
   (defun sail-circ-coplanar-tf-objfun (ind)
     (with-slots (xvar) ind
       (let* ((tf (car xvar))
@@ -104,11 +105,11 @@
    'options
    :popsize 200
    :ngen 400
-   :nobj 2
+   :nobj 4
    :ncon 0
    :nvar 11
-   :minvar (cons 5 (make-list 10 :initial-element (- (/ pi 2d0))))
-   :maxvar (cons 20 (make-list 10 :initial-element (/ pi 2d0)))
+   :minvar (cons 8 (make-list 10 :initial-element (- (/ pi 2d0))))
+   :maxvar (cons 10 (make-list 10 :initial-element (/ pi 2d0)))
    :pcross 0.9d0
    :pmut 0.5d0
    :eta-c 10d0
