@@ -3,7 +3,7 @@
   :license "MIT"
   :description "Non Dominated Sorting Genetic Algorithm II (NSGA-II) in Common Lisp"
   :serial t
-  :depends-on ()
+  :depends-on ("lparallel")
   :components
   ((:file "package")
    (:file "nsga2")

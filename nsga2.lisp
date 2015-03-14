@@ -16,7 +16,8 @@
    (pmut :initarg :pmut)
    (eta-c :initarg :eta-c)
    (eta-m :initarg :eta-m)
-   (objfun :initarg :objfun)))
+   (objfun :initarg :objfun)
+   (parallel :initarg :parallel :initform nil)))
 
 (defclass individual ()
   ((rank :accessor rank)
@@ -58,7 +59,9 @@
   ind)
 
 (defun evaluate-pop (options pop)
-  (mapcar #'(lambda (ind) (evaluate-ind options ind)) pop))
+  (if (slot-value options 'parallel)
+      (pmapcar #'(lambda (ind) (evaluate-ind options ind)) pop)
+      (mapcar #'(lambda (ind) (evaluate-ind options ind)) pop)))
 
 (defun dominates (p q)
   (with-slots ((sum-p constr-sum) (count-p constr-count) (obj-p obj)) p

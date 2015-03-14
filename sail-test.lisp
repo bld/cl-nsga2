@@ -64,7 +64,8 @@
    :pmut 0.5d0
    :eta-c 10d0
    :eta-m 20d0
-   :objfun #'sail-circ-coplanar-objfun))
+   :objfun #'sail-circ-coplanar-objfun
+   :parallel t))
 
 (defun sail-circ-coplanar-plot (ind &key filename title (stream t) (if-exists :supersede) (utm-fun #'(lambda (ind) (cdr (xvar ind)))) (tf-fun #'(lambda (ind) (car (xvar ind)))))
   (flet ((sail-plot (s)
@@ -103,9 +104,9 @@
 (defparameter *sail-circ-coplanar-tf-options*
   (make-instance
    'options
-   :popsize 200
-   :ngen 400
-   :nobj 4
+   :popsize 52
+   :ngen 100
+   :nobj 2
    :ncon 0
    :nvar 11
    :minvar (cons 8 (make-list 10 :initial-element (- (/ pi 2d0))))
@@ -114,7 +115,8 @@
    :pmut 0.5d0
    :eta-c 10d0
    :eta-m 20d0
-   :objfun #'sail-circ-coplanar-tf-objfun))
+   :objfun #'sail-circ-coplanar-tf-objfun
+   :parallel t))
 
 (defun run-sail-tf-problem ()
   (defparameter *sail-circ-coplanar-tf-pop*
